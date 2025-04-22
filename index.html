@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Reservation System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-utensils"></i>
+                <h1>jProsper Reservations</h1>
+            </div>
+            <nav>
+                <button id="view-tables-btn" class="active">Available Tables</button>
+                <button id="view-reservations-btn">Manage Reservations</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Available Tables Section -->
+            <section id="tables-section" class="active-section">
+                <h2>Available Tables</h2>
+                <div class="tables-container" id="tables-list">
+                    <!-- Tables will be populated here -->
+                    <div class="loading">Loading available tables...</div>
+                </div>
+
+                <div class="reservation-form-container">
+                    <h3>Make a Reservation</h3>
+                    <form id="reservation-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="guests">Number of Guests</label>
+                                <input type="number" id="guests" name="guests" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="table-select">Select Table</label>
+                                <select id="table-select" name="tableId" required>
+                                    <option value="">Select a table</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="date">Date</label>
+                                <input type="date" id="date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="time">Time</label>
+                                <input type="time" id="time" name="time" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Reserve Table</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Reservations Management Section -->
+            <section id="reservations-section">
+                <h2>Your Reservations</h2>
+                <div class="reservations-container" id="reservations-list">
+                    <!-- Reservations will be populated here -->
+                    <div class="loading">Loading reservations...</div>
+                </div>
+
+                <!-- Edit Reservation Modal -->
+                <div id="edit-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-modal">&times;</span>
+                        <h3>Edit Reservation</h3>
+                        <form id="edit-form">
+                            <input type="hidden" id="edit-id">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit-name">Full Name</label>
+                                    <input type="text" id="edit-name" name="name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-phone">Phone Number</label>
+                                    <input type="tel" id="edit-phone" name="phone" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit-guests">Number of Guests</label>
+                                    <input type="number" id="edit-guests" name="guests" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-table">Select Table</label>
+                                    <select id="edit-table" name="tableId" required>
+                                        <option value="">Select a table</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit-date">Date</label>
+                                    <input type="date" id="edit-date" name="date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-time">Time</label>
+                                    <input type="time" id="edit-time" name="time" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary">Update Reservation</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="notification" class="notification hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+
+    <script>
+        // Modify the reservation card to include buttons for editing and canceling
+        function generateReservationCard(reservation) {
+            const reservationCard = document.createElement('div');
+            reservationCard.className = 'reservation-card';
+
+            const reservationDate = new Date(`${reservation.date}T${reservation.time}`);
+            const formattedDate = reservationDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const formattedTime = reservationDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            reservationCard.innerHTML = `
+                <div class="reservation-info">
+                    <h4>${reservation.name}</h4>
+                    <div class="reservation-date">${formattedDate} at ${formattedTime}</div>
+                </div>
+                <div class="reservation-details">
+                    <div class="detail-item"><i class="fas fa-table"></i> Table ${reservation.tableNumber || reservation.tableId}</div>
+                    <div class="detail-item"><i class="fas fa-users"></i> ${reservation.guests} guests</div>
+                    <div class="detail-item"><i class="fas fa-phone"></i> ${reservation.phone}</div>
+                </div>
+                <div class="reservation-actions">
+                    <button class="btn-edit" onclick="openEditModal(${reservation.id})">Edit</button>
+                    <button class="btn-cancel" onclick="cancelReservation(${reservation.id})">Cancel</button>
+                </div>
+            `;
+
+            return reservationCard;
+        }
+
+        // Function to open the edit modal
+        function openEditModal(reservationId) {
+            const reservation = reservationsList.find(res => res.id === reservationId);  // Assuming reservationsList is an array
+            if (reservation) {
+                document.getElementById('edit-id').value = reservation.id;
+                document.getElementById('edit-name').value = reservation.name;
+                document.getElementById('edit-phone').value = reservation.phone;
+                document.getElementById('edit-guests').value = reservation.guests;
+                document.getElementById('edit-table').value = reservation.tableId;
+                document.getElementById('edit-date').value = reservation.date;
+                document.getElementById('edit-time').value = reservation.time;
+                document.getElementById('edit-modal').style.display = 'block';
+            }
+        }
+
+        // Function to cancel a reservation
+        async function cancelReservation(reservationId) {
+            const confirmation = confirm("Are you sure you want to cancel this reservation?");
+            if (!confirmation) return;
+
+            try {
+                const response = await fetch(`/api/reservations/cancel/${reservationId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) throw new Error('Failed to cancel reservation');
+
+                showNotification('Reservation canceled successfully');
+                loadReservations();  // Refresh reservations list
+            } catch (error) {
+                console.error('Error canceling reservation:', error);
+                showNotification('Error canceling reservation', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
